@@ -22,7 +22,7 @@ jobs:
         bundle exec ruby -Itest test/00_setup/test_try_out.rb
         bundle exec ruby -Itest test/02_object_model/test_hierarchy.rb
         bundle exec ruby -Itest test/02_object_model/test_object_model.rb
-        # bundle exec ruby -Itest test/03_method/test_define.rb
+        bundle exec ruby -Itest test/03_method/test_define.rb
         # bundle exec ruby -Itest test/03_method/test_try_over3_3.rb
         # bundle exec ruby -Itest test/04_block/test_simple_bot.rb
         # bundle exec ruby -Itest test/04_block/test_spy_mailbox.rb
