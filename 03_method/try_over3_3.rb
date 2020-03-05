@@ -5,6 +5,19 @@ TryOver3 = Module.new
 # - `test_` から始まるインスタンスメソッドが実行された場合、このクラスは `run_test` メソッドを実行する
 # - `test_` メソッドがこのクラスに実装されていなくても `test_` から始まるメッセージに応答することができる
 # - TryOver3::A1 には `test_` から始まるインスタンスメソッドが定義されていない
+class TryOver3::A1
+  def run_test
+    nil
+  end
+
+  def method_missing(name)
+    if name.to_s.start_with?('test_')
+      run_test
+    else
+      super
+    end
+  end
+end
 
 
 # Q2
@@ -15,6 +28,30 @@ class TryOver3::A2
   def initialize(name, value)
     instance_variable_set("@#{name}", value)
     self.class.attr_accessor name.to_sym unless respond_to? name.to_sym
+  end
+end
+
+class TryOver3::A2Proxy
+  def initialize(source)
+    @source = source
+  end
+
+  def method_missing(name, *args)
+    if @source.respond_to?(name)
+      # TODO: 様々な引数に対応させるには？
+      if name.to_s.end_with?('=')
+        # setterなら引数を渡す
+        @source.send(name, args[0])
+      else
+        @source.send(name)
+      end
+    else
+      super
+    end
+  end
+
+  def respond_to_missing?(name, priv)
+    @source.respond_to?(name)
   end
 end
 
@@ -35,6 +72,9 @@ module TryOver3::OriginalAccessor2
           self.class.define_method "#{attr_sym}?" do
             @attr == true
           end
+        elsif respond_to?("#{attr_sym}?")
+          # TODO: respond_to_missing?を使うようなやり方のほうがよい？
+          self.class.remove_method "#{attr_sym}?"
         end
         @attr = value
       end
@@ -48,24 +88,60 @@ end
 # TryOver3::A4.runners = [:Hoge]
 # TryOver3::A4::Hoge.run
 # # => "run Hoge"
+class TryOver3::A4
+  def self.runners=(names)
+    # 雑にクラスインスタンス変数を利用
+    @names = names
+  end
 
+  # test_q4_not_exists_runner_class が存在するので、定数に定義してはいけない
+  # -> const_missing で動的に関数を持つオブジェクトを返すように実装
+  def self.const_missing(id)
+    if @names.include?(id)
+      result = Object.new
+      result.define_singleton_method(:run) do
+        "run #{id}"
+      end
+      result
+    else
+      super
+    end
+  end
+end
 
 # Q5. チャレンジ問題！ 挑戦する方はテストの skip を外して挑戦してみてください。
 #
 # TryOver3::TaskHelper という include すると task というクラスマクロが与えらる以下のようなモジュールがあります。
 module TryOver3::TaskHelper
   def self.included(klass)
+    klass.instance_variable_set('@klass_names', [])
+
     klass.define_singleton_method :task do |name, &task_block|
-      new_klass = Class.new do
-        define_singleton_method :run do
-          puts "start #{Time.now}"
-          block_return = task_block.call
-          puts "finish #{Time.now}"
-          block_return
+      # old
+      klass_name = name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
+      @klass_names.push(klass_name.to_sym)
+
+      define_singleton_method(:const_missing) do |id|
+        if @klass_names.include?(id)
+          result = Object.new
+          result.define_singleton_method(:run) do
+            # TODO: クラス名とか若干手抜き
+            $stderr.puts "Warning: TryOver3::A5Task::#{id}.run is duplicated"
+            puts "start #{Time.now}"
+            block_return = task_block.call
+            puts "finish #{Time.now}"
+            block_return
+          end
+          result
+        else
+          super(id)
         end
       end
-      new_klass_name = name.to_s.split("_").map{ |w| w[0] = w[0].upcase; w }.join
-      const_set(new_klass_name, new_klass)
+
+      # new
+      define_singleton_method(name) do
+        task_block.call
+      end
     end
   end
 end
