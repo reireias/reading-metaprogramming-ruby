@@ -1,3 +1,4 @@
 # Block
 
-テキストの要約をしましょう
+blockの使い方
+scope
