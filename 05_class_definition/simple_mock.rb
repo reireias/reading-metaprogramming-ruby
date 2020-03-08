@@ -37,3 +37,37 @@
 # obj.imitated_method
 # obj.called_times(:imitated_method) #=> 2
 # ```
+module SimpleMock
+  def self.new
+    mock(Object.new)
+  end
+
+  def self.mock(obj)
+    class << obj
+      include SimpleMock
+    end
+    obj
+  end
+
+  def expects(method, expected)
+    self.class.define_method(method) do
+      expected
+    end
+  end
+
+  def watch(method)
+    # TODO: 引数ありのメソッドのwatchに対応してない
+    @called = {} if @called.nil?
+    # alias chaining
+    self.class.alias_method("original_#{method}", method)
+    define_singleton_method(method) do
+      # TODO: いっつもこれをスマートに書く方法を探してる
+      @called[method] = @called[method] ? @called[method] + 1 : 1
+      send("original_#{method}")
+    end
+  end
+
+  def called_times(method)
+    @called[method]
+  end
+end
