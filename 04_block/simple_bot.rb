@@ -24,20 +24,27 @@
 #     2. e.g. クラス内で `setting :name, 'bot'` と実行した場合は、respondメソッドに渡されるブロックのスコープ内で `settings.name` の戻り値は `bot` の文字列になります
 class SimpleBot
   def self.setting(name, value)
-    define_singleton_method(:settings) do
-      ret = Object.new
+    @dict ||= {}
+    @dict[name] = value
+  end
+
+  def self.settings
+    ret = Object.new
+    @dict&.each do |name, value|
       ret.define_singleton_method(name) do
         value
       end
-      ret
     end
+
+    ret
   end
 
   def self.respond(keyword, &block)
-    define_method(:ask) do |message|
-      return block.call if message == keyword
+    @keywords ||= {}
+    @keywords[keyword] = block
+  end
 
-      nil
-    end
+  def ask(message)
+    self.class.instance_variable_get(:@keywords)[message]&.call
   end
 end
