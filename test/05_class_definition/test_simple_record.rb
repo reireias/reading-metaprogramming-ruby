@@ -9,6 +9,13 @@ class TestSimpleRecord < MiniTest::Test
     attr_accessor :name, :description
   end
 
+  class Product2
+    include SimpleModel
+    
+    attr_accessor :name, :description
+    attr_accessor :hoge
+  end
+
   def test_accessor
     obj = Product.new(name: 'SmarterHR', description: 'more smart SmartHR')
     assert_equal 'SmarterHR', obj.name
@@ -67,5 +74,14 @@ class TestSimpleRecord < MiniTest::Test
     obj.description = desc
     assert_equal name, obj.name
     assert_equal desc, obj.description
+  end
+
+  def test_multiple_accessor
+    obj = Product2.new(name: 'SmarterHR',
+                       description: 'more smart SmartHR',
+                       hoge: 'fuga')
+    assert_equal 'SmarterHR', obj.name
+    assert_equal 'more smart SmartHR', obj.description
+    assert_equal 'fuga', obj.hoge
   end
 end
