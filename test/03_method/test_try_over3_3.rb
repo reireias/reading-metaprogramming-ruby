@@ -24,7 +24,7 @@ class TestTryOver03Q1 < Minitest::Test
     assert_equal "foofoo", TryOver3::A2Proxy.new(source).foo
   end
 
-  def test_q2_proxy_hoge_writter
+  def test_q2_proxy_hoge_writer
     source = TryOver3::A2.new("foo", "foo")
     proxy = TryOver3::A2Proxy.new(source)
     proxy.foo = "foofoo"
@@ -96,7 +96,11 @@ class TestTryOver03Q1 < Minitest::Test
     _, err = capture_io do
       TryOver3::A5Task::Foo.run
     end
-    assert_match "Warning: TryOver3::A5Task::Foo.run is duplicated", err
+    assert_match "Warning: TryOver3::A5Task::Foo.run is deprecated", err
+  end
+
+  def test_q5_error_when_called_not_defined_task_class
+    assert_raises(NameError) { TryOver3::A5Task::Bar.run }
   end
 
   private
